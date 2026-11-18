@@ -1,0 +1,11 @@
+# BIOS images and extracted modules: never commit MSI firmware
+*.30?
+*.bin
+*.rom
+*.efi
+*.fd
+*_output/
+
+# Intermediate data
+options.json
+__pycache__/
