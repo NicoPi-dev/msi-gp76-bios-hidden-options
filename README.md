@@ -52,6 +52,8 @@ These are the defaults written in the forms. The values active on a given laptop
 | Flash Protection Range Registers | Disabled | Same: no write protection of flash ranges |
 | Tcc Activation Offset | 5 | Thermal throttling starts 5 °C below TjMax |
 
+Each option in the results lists its **VarStore, offset and size**: the exact location of the value inside its UEFI variable. Tools such as `setup_var` use this information. Changing BIOS variables can make a laptop unbootable, so see the disclaimer below.
+
 ## Checked on a real machine
 
 The form defaults above are not the whole story. [`tools/check_live.py`](tools/check_live.py) reads the live state under Linux, read-only:
@@ -72,7 +74,13 @@ Results on a GP76 Leopard with an i7-10870H, BIOS E17K2IMS.30F, Fedora:
 
 So although the form default for "BIOS Lock" is Disabled, the flash is protected in practice. The other setup variables (`Setup`, `CpuSetup`, `PchSetup`…) are boot-service only on this BIOS, so Linux cannot read them; the MSR and BIOS_CNTL checks show the real state anyway.
 
-Each option in the results lists its **VarStore, offset and size**: the exact location of the value inside its UEFI variable. Tools such as `setup_var` use this information. Changing BIOS variables can make a laptop unbootable, so see the disclaimer below.
+### Update the Intel ME separately
+
+BIOS E17K2IMS.30F ships Intel CSME **14.0.31.1120**. That version predates the fix for Intel advisory [INTEL-SA-00295](https://www.intel.com/content/www/us/en/security-center/advisory/INTEL-SA-00295.html) (June 2020, affected range 14.0 through 14.0.32), and the 14.0 branch gets no later fixes.
+
+In November 2026 MSI published a separate **"Intel ME firmware update tool" (ME14180_H)** on the GP76 Leopard support page. Check its SHA-256, read the `.bat` (it runs `FWUpdLcl64.exe -f FWUpdate_prod_Consumer.bin -forcereset`, so the PC reboots by itself), keep the charger plugged in, and run it as administrator from Windows. The BIOS must be 30F first.
+
+Result on the test machine: `/sys/class/mei/mei0/fw_ver` went from 14.0.31.1120 to **14.1.80.2616**, and `fwupdmgr security` reports the new CSME as valid, with manufacturing mode and override still locked.
 
 ## Run it yourself
 

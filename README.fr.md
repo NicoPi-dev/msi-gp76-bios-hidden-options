@@ -52,6 +52,8 @@ Ce sont les défauts écrits dans les formulaires. Les valeurs actives sur un po
 | Flash Protection Range Registers | Disabled | Idem : pas de protection en écriture de zones de la flash |
 | Tcc Activation Offset | 5 | Le bridage thermique commence 5 °C sous la TjMax |
 
+Chaque option indique son **VarStore, sa position (offset) et sa taille** : l'emplacement exact de sa valeur dans la variable UEFI. Des outils comme `setup_var` s'en servent. Modifier des variables BIOS peut rendre un portable inutilisable : voir l'avertissement plus bas.
+
 ## Vérifié sur une vraie machine
 
 Les défauts des formulaires ne disent pas tout. [`tools/check_live.py`](tools/check_live.py) lit l'état réel sous Linux, en lecture seule :
@@ -72,7 +74,13 @@ Résultats sur un GP76 Leopard avec un i7-10870H, BIOS E17K2IMS.30F, sous Fedora
 
 Même si le défaut du formulaire pour « BIOS Lock » est Disabled, la flash est donc protégée en pratique. Les autres variables du Setup (`Setup`, `CpuSetup`, `PchSetup`…) ne sont accessibles qu'au démarrage sur ce BIOS : Linux ne peut pas les lire. Les vérifications MSR et BIOS_CNTL montrent malgré tout l'état réel.
 
-Chaque option indique son **VarStore, sa position (offset) et sa taille** : l'emplacement exact de sa valeur dans la variable UEFI. Des outils comme `setup_var` s'en servent. Modifier des variables BIOS peut rendre un portable inutilisable : voir l'avertissement plus bas.
+### Mettre à jour l'Intel ME séparément
+
+Le BIOS E17K2IMS.30F embarque l'Intel CSME **14.0.31.1120**. Cette version est antérieure au correctif de l'avis Intel [INTEL-SA-00295](https://www.intel.com/content/www/us/en/security-center/advisory/INTEL-SA-00295.html) (juin 2020, versions touchées de 14.0 à 14.0.32), et la branche 14.0 ne reçoit plus de correctifs.
+
+En novembre 2026, MSI a publié sur la page support du GP76 Leopard un **« Outil de mise à jour du firmware Intel ME » (ME14180_H)**, séparé du BIOS. Vérifie son SHA-256, lis le `.bat` (il lance `FWUpdLcl64.exe -f FWUpdate_prod_Consumer.bin -forcereset` : le PC redémarre tout seul), garde le chargeur branché et lance-le en administrateur depuis Windows. Le BIOS doit d'abord être en 30F.
+
+Résultat sur la machine de test : `/sys/class/mei/mei0/fw_ver` est passé de 14.0.31.1120 à **14.1.80.2616**, et `fwupdmgr security` déclare le nouveau CSME valide, mode fabrication et contournement toujours verrouillés.
 
 ## Le refaire soi-même
 
