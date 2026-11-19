@@ -52,6 +52,26 @@ Ce sont les défauts écrits dans les formulaires. Les valeurs actives sur un po
 | Flash Protection Range Registers | Disabled | Idem : pas de protection en écriture de zones de la flash |
 | Tcc Activation Offset | 5 | Le bridage thermique commence 5 °C sous la TjMax |
 
+## Vérifié sur une vraie machine
+
+Les défauts des formulaires ne disent pas tout. [`tools/check_live.py`](tools/check_live.py) lit l'état réel sous Linux, en lecture seule :
+
+```bash
+sudo python3 -I tools/check_live.py
+```
+
+Résultats sur un GP76 Leopard avec un i7-10870H, BIOS E17K2IMS.30F, sous Fedora :
+
+| Vérification | Résultat | Signification |
+|---|---|---|
+| Variable `MSIHiddenFun` | 1 | Menu avancé masqué ; la position trouvée par l'analyse est la bonne |
+| CFG Lock (MSR 0xE2, bit 15) | Verrouillé | Fixé par le BIOS, impossible à changer depuis l'OS |
+| Overclocking Lock (MSR 0x194, bit 20) | Verrouillé | Undervolt impossible depuis l'OS (ThrottleStop, intel-undervolt) |
+| BIOS_CNTL (contrôleur SPI 00:1f.5) | `0xaa` : BIOSWE=0, BLE=1, SMM_BWP=1, BILD=1 | La flash du BIOS est protégée en écriture : seul le firmware SMM peut y écrire, pas l'OS, même en root |
+| Microcode | `0x100` | Dernière révision Intel pour CML-H (`06-a5-02`) à la publication de mai 2025, chargée par Linux au démarrage |
+
+Même si le défaut du formulaire pour « BIOS Lock » est Disabled, la flash est donc protégée en pratique. Les autres variables du Setup (`Setup`, `CpuSetup`, `PchSetup`…) ne sont accessibles qu'au démarrage sur ce BIOS : Linux ne peut pas les lire. Les vérifications MSR et BIOS_CNTL montrent malgré tout l'état réel.
+
 Chaque option indique son **VarStore, sa position (offset) et sa taille** : l'emplacement exact de sa valeur dans la variable UEFI. Des outils comme `setup_var` s'en servent. Modifier des variables BIOS peut rendre un portable inutilisable : voir l'avertissement plus bas.
 
 ## Le refaire soi-même

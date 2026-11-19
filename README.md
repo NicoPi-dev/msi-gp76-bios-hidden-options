@@ -52,6 +52,26 @@ These are the defaults written in the forms. The values active on a given laptop
 | Flash Protection Range Registers | Disabled | Same: no write protection of flash ranges |
 | Tcc Activation Offset | 5 | Thermal throttling starts 5 °C below TjMax |
 
+## Checked on a real machine
+
+The form defaults above are not the whole story. [`tools/check_live.py`](tools/check_live.py) reads the live state under Linux, read-only:
+
+```bash
+sudo python3 -I tools/check_live.py
+```
+
+Results on a GP76 Leopard with an i7-10870H, BIOS E17K2IMS.30F, Fedora:
+
+| Check | Result | Meaning |
+|---|---|---|
+| `MSIHiddenFun` variable | 1 | Advanced menu hidden; the offset from the analysis is correct |
+| CFG Lock (MSR 0xE2, bit 15) | Locked | Set by the BIOS, cannot be changed from the OS |
+| Overclocking Lock (MSR 0x194, bit 20) | Locked | Undervolting is impossible from the OS (ThrottleStop, intel-undervolt) |
+| BIOS_CNTL (SPI controller 00:1f.5) | `0xaa`: BIOSWE=0, BLE=1, SMM_BWP=1, BILD=1 | The BIOS flash is write-protected: only SMM firmware can write to it, not the OS, even as root |
+| Microcode | `0x100` | Latest Intel revision for CML-H (`06-a5-02`) as of the May 2025 release, loaded by Linux at boot |
+
+So although the form default for "BIOS Lock" is Disabled, the flash is protected in practice. The other setup variables (`Setup`, `CpuSetup`, `PchSetup`…) are boot-service only on this BIOS, so Linux cannot read them; the MSR and BIOS_CNTL checks show the real state anyway.
+
 Each option in the results lists its **VarStore, offset and size**: the exact location of the value inside its UEFI variable. Tools such as `setup_var` use this information. Changing BIOS variables can make a laptop unbootable, so see the disclaimer below.
 
 ## Run it yourself
